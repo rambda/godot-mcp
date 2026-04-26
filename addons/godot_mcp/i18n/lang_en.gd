@@ -67,6 +67,8 @@ const TRANSLATIONS: Dictionary = {
 	"cat_ui": "UI",
 	"cat_signal": "Signal",
 	"cat_group": "Group",
+	"cat_dap": "DAP / Debug Console",
+	"cat_lsp": "LSP / Script Check",
 
 	# Config tab - IDE section
 	"ide_config": "IDE One-Click Configuration",
@@ -209,6 +211,20 @@ const TRANSLATIONS: Dictionary = {
 
 	# Group tools
 	"tool_group_group_desc": "Query and manage node groups globally",
+
+	# DAP tools
+	"tool_dap_fetch_console_desc": "Fetch console output from a running game via DAP",
+	"tool_dap_clear_console_desc": "Clear the cached console output buffer",
+	"tool_dap_set_breakpoints_desc": "Set breakpoints in a GDScript file",
+	"tool_dap_get_stack_trace_desc": "Get call stack when paused at a breakpoint",
+	"tool_dap_get_variables_desc": "Get local/global/member variables for a stack frame",
+	"tool_dap_continue_execution_desc": "Continue execution after breakpoint pause",
+	"tool_dap_step_over_desc": "Step over the current line",
+	"tool_dap_step_into_desc": "Step into the current function call",
+	"tool_dap_evaluate_expression_desc": "Evaluate a GDScript expression at a breakpoint",
+
+	# LSP tools
+	"tool_lsp_get_diagnostics_desc": "Check GDScript for syntax errors via LSP",
 }
 
 

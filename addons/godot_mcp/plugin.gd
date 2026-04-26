@@ -619,7 +619,7 @@ func _create_category_section(category: String, tools: Array) -> VBoxContainer:
 		"material": "cat_material", "shader": "cat_shader", "lighting": "cat_lighting",
 		"particle": "cat_particle", "tilemap": "cat_tilemap", "geometry": "cat_geometry",
 		"physics": "cat_physics", "navigation": "cat_navigation", "audio": "cat_audio",
-		"ui": "cat_ui", "signal": "cat_signal", "group": "cat_group"
+		"ui": "cat_ui", "signal": "cat_signal", "group": "cat_group", "lsp": "cat_lsp", "dap": "cat_dap"
 	}
 	var display_category = _tr(category_keys.get(category, category)) if category in category_keys else category.capitalize()
 

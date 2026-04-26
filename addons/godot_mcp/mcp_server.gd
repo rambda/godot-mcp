@@ -35,6 +35,8 @@ const AudioTools = preload("res://addons/godot_mcp/tools/audio_tools.gd")
 const UITools = preload("res://addons/godot_mcp/tools/ui_tools.gd")
 const SignalTools = preload("res://addons/godot_mcp/tools/signal_tools.gd")
 const GroupTools = preload("res://addons/godot_mcp/tools/group_tools.gd")
+const LSPTools = preload("res://addons/godot_mcp/tools/lsp_tools.gd")
+const DAPTools = preload("res://addons/godot_mcp/tools/dap_tools.gd")
 
 signal server_started
 signal server_stopped
@@ -62,7 +64,6 @@ const SERVER_VERSION = "1.0.0"
 
 
 func _ready() -> void:
-	_tcp_server = TCPServer.new()
 	_register_tools()
 
 
@@ -114,10 +115,18 @@ func initialize(port: int, host: String, debug: bool) -> void:
 	_host = host
 	_debug_mode = debug
 
+	# Initialize TCP server here (called after add_child, before _ready)
+	if _tcp_server == null:
+		_tcp_server = TCPServer.new()
+
 
 func start() -> bool:
 	if _running:
 		return true
+
+	if _tcp_server == null:
+		push_error("[MCP] TCP server not initialized. Call initialize() first.")
+		return false
 
 	var error = _tcp_server.listen(_port, _host)
 	if error != OK:
@@ -228,6 +237,8 @@ func _register_tools() -> void:
 	_tools["ui"] = UITools.new()
 	_tools["signal"] = SignalTools.new()
 	_tools["group"] = GroupTools.new()
+	_tools["lsp"] = LSPTools.new()
+	_tools["dap"] = DAPTools.new()
 
 	# Collect all tool definitions
 	_tool_definitions.clear()
@@ -320,7 +331,7 @@ func _process_http_request(client: StreamPeerTCP) -> void:
 
 	if method == "POST" and path == "/mcp":
 		print("[MCP] Handling MCP request...")
-		response = _handle_mcp_request(request_body)
+		response = await _handle_mcp_request(request_body)
 		print("[MCP] MCP response ready")
 	elif method == "GET" and path == "/health":
 		response = _create_health_response()
@@ -443,7 +454,7 @@ func _handle_mcp_request(body: String) -> Dictionary:
 		"tools/list":
 			response = _handle_tools_list(params, id)
 		"tools/call":
-			response = _handle_tools_call(params, id)
+			response = await _handle_tools_call(params, id)
 		"ping":
 			response = _create_json_rpc_response({}, id)
 		_:
@@ -520,7 +531,7 @@ func _handle_tools_call(params: Dictionary, id) -> Dictionary:
 
 	print("[MCP] Executing tool...")
 	# Execute with error handling
-	result = executor.execute(actual_tool_name, arguments)
+	result = await executor.execute(actual_tool_name, arguments)
 
 	print("[MCP] Tool result: success=%s" % result.get("success", false))
 
@@ -546,22 +557,33 @@ func _create_tool_response(result: Dictionary, id) -> Dictionary:
 
 
 func _create_json_rpc_response(result, id) -> Dictionary:
-	return {
+	# Ensure id is always present (can be null per JSON-RPC spec)
+	var response = {
 		"jsonrpc": "2.0",
-		"result": result,
-		"id": id
+		"result": result
 	}
+	# Always include id field, even if null
+	if id != null:
+		response["id"] = id
+	else:
+		response["id"] = null
+	return response
 
 
 func _create_json_rpc_error(code: int, message: String, id) -> Dictionary:
-	return {
+	var response = {
 		"jsonrpc": "2.0",
 		"error": {
 			"code": code,
 			"message": message
-		},
-		"id": id
+		}
 	}
+	# Always include id field, even if null
+	if id != null:
+		response["id"] = id
+	else:
+		response["id"] = null
+	return response
 
 
 func _create_health_response() -> Dictionary:
@@ -588,15 +610,32 @@ func _create_cors_response() -> Dictionary:
 
 
 func _send_http_response(client: StreamPeerTCP, data: Dictionary) -> void:
-	# Sanitize data before JSON serialization
-	var sanitized = _sanitize_for_json(data)
-	var body = JSON.stringify(sanitized)
-	var body_bytes = body.to_utf8_buffer()
-	var status_code = data.get("status", 200)
-	var status_text = "OK" if status_code == 200 else "Error"
+	# Check if this is a JSON-RPC response (has jsonrpc field)
+	# If so, don't add status field and serialize directly
+	var is_jsonrpc = data.has("jsonrpc")
+	var status_code = 200
+	var status_text = "OK"
 
-	var status_texts = {200: "OK", 204: "No Content", 404: "Not Found", 500: "Internal Server Error"}
-	status_text = status_texts.get(status_code, "OK")
+	if not is_jsonrpc:
+		# For non-JSON-RPC responses, extract status
+		status_code = data.get("status", 200)
+		var status_texts = {200: "OK", 204: "No Content", 404: "Not Found", 500: "Internal Server Error"}
+		status_text = status_texts.get(status_code, "OK")
+
+	# For JSON-RPC responses, serialize directly without sanitization
+	# to preserve exact structure
+	var body: String
+	var body_bytes: PackedByteArray
+
+	if is_jsonrpc:
+		# Direct JSON serialization for JSON-RPC to preserve structure
+		body = JSON.stringify(data)
+		body_bytes = body.to_utf8_buffer()
+	else:
+		# Sanitize non-JSON-RPC responses
+		var sanitized = _sanitize_for_json(data)
+		body = JSON.stringify(sanitized)
+		body_bytes = body.to_utf8_buffer()
 
 	var headers = "HTTP/1.1 %d %s\r\n" % [status_code, status_text]
 	headers += "Content-Type: application/json; charset=utf-8\r\n"

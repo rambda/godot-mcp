@@ -67,6 +67,8 @@ const TRANSLATIONS: Dictionary = {
 	"cat_ui": "用户界面",
 	"cat_signal": "信号",
 	"cat_group": "分组",
+	"cat_dap": "DAP / 调试控制台",
+	"cat_lsp": "LSP / 脚本检查",
 
 	# Config tab - IDE section
 	"ide_config": "IDE 一键配置",
@@ -209,6 +211,20 @@ const TRANSLATIONS: Dictionary = {
 
 	# 分组工具
 	"tool_group_group_desc": "全局查询和管理节点分组",
+
+	# DAP工具
+	"tool_dap_fetch_console_desc": "通过 DAP 获取运行中游戏的控制台输出",
+	"tool_dap_clear_console_desc": "清空缓存的控制台输出缓冲区",
+	"tool_dap_set_breakpoints_desc": "在 GDScript 文件中设置断点",
+	"tool_dap_get_stack_trace_desc": "游戏暂停于断点时获取调用栈",
+	"tool_dap_get_variables_desc": "获取栈帧的局部/全局/成员变量",
+	"tool_dap_continue_execution_desc": "断点暂停后继续执行",
+	"tool_dap_step_over_desc": "步过当前行",
+	"tool_dap_step_into_desc": "步入当前函数调用",
+	"tool_dap_evaluate_expression_desc": "在断点上下文中求值 GDScript 表达式",
+
+	# LSP工具
+	"tool_lsp_get_diagnostics_desc": "通过 LSP 检查 GDScript 语法错误",
 }
 
 
