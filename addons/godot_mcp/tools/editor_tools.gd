@@ -302,6 +302,30 @@ EXAMPLES:
 				},
 				"required": ["action"]
 			}
+		},
+		{
+			"name": "restart",
+			"description": """RESTART EDITOR: Restart the Godot editor.
+
+Optionally saves all scenes before restarting. The editor will close and reopen with the same project.
+
+IMPORTANT: After calling this tool, the editor will be offline for several seconds while it restarts.
+Wait at least 5 seconds, then poll `editor_status` (action: "get_info") to check if the editor is back online.
+If it fails, wait another 5 seconds and retry. Do NOT issue other MCP calls until `editor_status` succeeds.
+Some projects with many assets may take longer to restart.
+
+EXAMPLES:
+- Restart with save: {"save": true}
+- Restart without save: {"save": false}""",
+			"inputSchema": {
+				"type": "object",
+				"properties": {
+					"save": {
+						"type": "boolean",
+						"description": "Whether to save all scenes before restarting (default: true)"
+					}
+				}
+			}
 		}
 	]
 
@@ -322,6 +346,8 @@ func execute(tool_name: String, args: Dictionary) -> Dictionary:
 			return _execute_filesystem(args)
 		"plugin":
 			return _execute_plugin(args)
+		"restart":
+			return _execute_restart(args)
 		_:
 			return _error("Unknown tool: %s" % tool_name)
 
@@ -1196,3 +1222,20 @@ func _disable_plugin(ei: EditorInterface, plugin_name: String) -> Dictionary:
 		"plugin": plugin_name,
 		"enabled": false
 	}, "Plugin disabled")
+
+
+# ==================== RESTART ====================
+
+func _execute_restart(args: Dictionary) -> Dictionary:
+	var save = args.get("save", true)
+
+	var ei = _get_editor_interface()
+	if not ei:
+		return _error("Editor interface not available")
+
+	ei.restart_editor.call_deferred(save)
+
+	return _success({
+		"save": save,
+		"restarting": true
+	}, "Editor is restarting...")

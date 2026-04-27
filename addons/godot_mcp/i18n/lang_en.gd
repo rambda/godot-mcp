@@ -140,6 +140,7 @@ const TRANSLATIONS: Dictionary = {
 	"tool_editor_inspector_desc": "Control the inspector panel",
 	"tool_editor_filesystem_desc": "Interact with the filesystem dock",
 	"tool_editor_plugin_desc": "Query and manage editor plugins",
+	"tool_editor_restart_desc": "Restart the Godot editor",
 
 	# Debug tools
 	"tool_debug_log_desc": "Print debug messages and errors",

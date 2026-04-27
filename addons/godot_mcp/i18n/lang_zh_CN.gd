@@ -140,6 +140,7 @@ const TRANSLATIONS: Dictionary = {
 	"tool_editor_inspector_desc": "控制检视器面板",
 	"tool_editor_filesystem_desc": "与文件系统面板交互",
 	"tool_editor_plugin_desc": "查询和管理编辑器插件",
+	"tool_editor_restart_desc": "重启 Godot 编辑器",
 
 	# 调试工具
 	"tool_debug_log_desc": "打印调试消息和错误",

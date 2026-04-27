@@ -114,6 +114,15 @@ func get_tools() -> Array[Dictionary]:
 				},
 				"required": ["expression"]
 			}
+		},
+		{
+			"name": "capture_screenshot",
+			"description": "DAP: Capture a screenshot from the running game. Saves to project/.agent/screenshots/ and returns the file path. Game must be paused at a breakpoint.",
+			"inputSchema": {
+				"type": "object",
+				"properties": {},
+				"required": []
+			}
 		}
 	]
 
@@ -138,6 +147,8 @@ func execute(tool_name: String, args: Dictionary) -> Dictionary:
 			return await _execute_step_into(args)
 		"evaluate_expression":
 			return await _execute_evaluate(args)
+		"capture_screenshot":
+			return await _execute_capture_screenshot(args)
 		_:
 			return {"success": false, "error": "Unknown tool: %s" % tool_name}
 
@@ -427,6 +438,39 @@ func _execute_evaluate(args: Dictionary) -> Dictionary:
 
 	var body = res.get("response", {}).get("body", {})
 	return {"success": true, "result": body.get("result", ""), "type": body.get("type", "")}
+
+
+# ==================== Screenshot ====================
+
+func _execute_capture_screenshot(_args: Dictionary) -> Dictionary:
+	if not _dap_connected:
+		var connect_res = await _connect_dap()
+		if not connect_res.get("success", false):
+			return connect_res
+
+	var stopped = await _dap_wait_for_event("stopped", 10000)
+	if not stopped:
+		return {"success": false, "error": "Game is not paused. Set breakpoints and run first."}
+
+	var screenshot_dir = ProjectSettings.globalize_path("res://.agent/screenshots/")
+	DirAccess.make_dir_recursive_absolute(screenshot_dir)
+
+	var filename = "screenshot_%d.png" % int(Time.get_unix_time_from_system())
+	var file_path = screenshot_dir + filename
+
+	var res = await _dap_request("evaluate", {
+		"expression": "get_viewport().get_texture().get_image().save_png(\"%s\")" % file_path,
+		"context": "repl"
+	})
+
+	if not res.get("success", false):
+		return {"success": false, "error": "Screenshot capture failed", "response": res}
+
+	var body = res.get("response", {}).get("body", {})
+	var save_result = body.get("result", "")
+	if save_result != "0":
+		return {"success": false, "error": "Screenshot save failed (result: %s)" % save_result}
+	return {"success": true, "file_path": file_path}
 
 
 # ==================== DAP Connection ====================
